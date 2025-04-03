@@ -1,10 +1,11 @@
 <template>
-  <v-text-field label='Autor' v-model="author"></v-text-field>
-  <v-text-field label='Titulo' v-model="title"></v-text-field>
+  <v-text-field v-model="author" label='Autor' />
+  <v-text-field v-model="title" label='Titulo' />
 </template>
 
 <script setup lang='ts'>
-const author = defineModel('author');
-const title = defineModel('title');
+
+const author = defineModel<string>('author');
+const title = defineModel<string>('title');
 
 </script>

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { errStore } from "~/stores/err.store";
+import { setErrValues, openDialog } from "~/stores/err.store";
 
 const apiClient = axios.create({
   baseURL: 'https://jsonplaceholder.typicode.com',
@@ -13,8 +13,10 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    errStore.setValues('Error', error.message)
-    return Promise.reject(error);
+    console.log(error)
+    setErrValues("An error occured during data retrieval", error.message);
+    openDialog();
+    return (error);
   }
 );
 

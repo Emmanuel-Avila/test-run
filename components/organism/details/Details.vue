@@ -3,13 +3,13 @@
     <v-card title="Details" v-if="details">
       <v-row>
         <v-col cols="12">
-          <v-text-field v-model="details.author" label="Author" disabled></v-text-field>
+          <v-text-field v-model="details.author" label="Author" readonly></v-text-field>
         </v-col>
         <v-col cols='12'>
-          <v-text-field v-model="details.title" label="Title" disabled></v-text-field>
+          <v-text-field v-model="details.title" label="Title" readonly></v-text-field>
         </v-col>
         <v-col cols="12">
-          <v-textarea v-model="details.body" label="Body" disabled></v-textarea>
+          <v-textarea v-model="details.body" label="Body" readonly></v-textarea>
         </v-col>
       </v-row>
     </v-card>
@@ -17,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+
 
 const dialog = defineModel<boolean>('dialog');
 const details = defineModel<{ author: string, title: string, body: string } | null>('details');
