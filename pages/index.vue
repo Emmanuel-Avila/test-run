@@ -15,29 +15,12 @@
     </v-data-table>
   </v-container>
   <Details v-model:dialog="dialog" v-model:details="details"></Details>
-  <!-- <v-dialog v-model="dialog" max-width='500'>
-    <v-card title="Details">
-      <v-row>
-        <v-col cols="12">
-          <v-text-field v-model="details.author" label="Author" disabled></v-text-field>
-        </v-col>
-        <v-col cols='12'>
-          <v-text-field v-model="details.title" label="Title" disabled></v-text-field>
-        </v-col>
-        <v-col cols="12">
-          <v-textarea v-model="details.body" label="Body" disabled></v-textarea>
-        </v-col>
-      </v-row>
-    </v-card>
-  </v-dialog> -->
 </template>
 
 
 
 <script setup lang="ts">
-import axios from 'axios';
-import { errStore } from '~/stores/err.store';
-import Filter from '~/components/Filter.vue';
+import apiClient from '~/utils/axios';
 
 export type Post = {
   userId: number,
@@ -60,16 +43,9 @@ const isLoading = ref(true);
 const dialog = ref(false);
 const posts = ref<Post[]>([]);
 const users = ref<{ id: number; name: string }[]>([]);
+
 const details = ref(DEFAULT_DETAILS);
 
-
-axios.interceptors.response.use(function (response) {
-
-  return response;
-}, function (error) {
-  errStore.setValues('Error', error.message)
-  return Promise.reject(error);
-})
 
 const headers = [
   { title: 'Title', value: 'title' },
@@ -86,9 +62,9 @@ const filteredPosts = computed(() => {
 async function getPosts() {
   try {
 
-    const postsResponse = await axios.get('https://jsonplaceholder.typicode.com/posts');
+    const postsResponse = await apiClient.get("/posts");
 
-    const usersResponse = await axios.get("https://jsonplaceholder.typicode.com/users");
+    const usersResponse = await apiClient.get("/users");
     users.value = usersResponse.data;
 
     posts.value = postsResponse.data.map((post: any) => {
@@ -118,8 +94,8 @@ async function getDetails(postId: number) {
   details.value = { title: found.title, body: found.body, author: "Cargando..." };
 
   try {
-    const authorData = await getAuthor(found.userId);
-    details.value.author = authorData.name;
+    const authorData = await apiClient.get(`/users/${found.userId}`);
+    details.value.author = authorData.data.name;
   } catch {
     details.value.author = "Desconocido";
   }
@@ -128,51 +104,35 @@ async function getDetails(postId: number) {
 }
 
 
-async function getAuthor(id: number) {
-  try {
-    const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
-    return response.data;
-  } catch (error) {
-    console.log("Error en conseguir el autor", error);
-    return { name: "Desconocido" };
-  }
-}
-
 function handleFavorites(id: number) {
 
-  if (typeof window !== 'undefined') {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (typeof window === 'undefined') return;
 
-    const storaged = localStorage.getItem("favoritePosts");
-    const favoritePosts: Record<number, boolean> = storaged ? JSON.parse(storaged) : {};
-    favoritePosts[id] = favoritePosts.hasOwnProperty(id) ? !favoritePosts[id] : true;
+  const storaged = localStorage.getItem("favoritePosts");
+  const favoritePosts: number[] = storaged ? JSON.parse(storaged) : [];
 
-    localStorage.setItem("favoritePosts", JSON.stringify(favoritePosts));
+  const foundIndex = favoritePosts.findIndex(p => p === id);
+  foundIndex > -1 ? favoritePosts.splice(foundIndex, 1) : favoritePosts.push(id);
 
-    const foundIndex = posts.value.findIndex(p => p.id === id);
-    posts.value[foundIndex].favorite = !posts.value[foundIndex].favorite;
+  localStorage.setItem("favoritePosts", JSON.stringify(favoritePosts));
 
-    console.log(favoritePosts)
-  }
+  const postIndex = posts.value.findIndex(p => p.id === id);
+  posts.value[postIndex].favorite = !posts.value[postIndex].favorite;
+
 }
 
 function fillFavorites() {
-  if (typeof window !== 'undefined') {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const storaged = localStorage.getItem("favoritePosts");
-    const favoritePosts: Record<number, boolean> = storaged ? JSON.parse(storaged) : {};
+  if (typeof window === 'undefined') return;
+  const storaged = localStorage.getItem("favoritePosts");
+  const favoritePostsIds: number[] = storaged ? JSON.parse(storaged) : [];
 
-    if (favoritePosts) {
-      const keys = Object.keys(favoritePosts);
-
-      keys.map((k) => {
-        if (favoritePosts[parseInt(k)]) {
-          const foundIndex = posts.value.findIndex(p => p.id === parseInt(k))
-          posts.value[foundIndex].favorite = !posts.value[foundIndex].favorite;
-        }
-      })
-    }
+  if (favoritePostsIds.length > 0) {
+    favoritePostsIds.map((id) => {
+      const postIndex = posts.value.findIndex(p => p.id === id);
+      posts.value[postIndex].favorite = true;
+    })
   }
+
 }
 
 function clearLocalStorage() {
